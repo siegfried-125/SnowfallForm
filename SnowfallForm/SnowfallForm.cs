@@ -11,24 +11,23 @@ namespace SnowfallForm
     {
         private List<Snowflake> snowflakes;
         private Timer timer;
-        private Bitmap offScreenBuffer;
 
         public SnowfallForm()
         {
             InitializeComponent();
 
+            // Set window properties
+            FormBorderStyle = FormBorderStyle.None;
             WindowState = FormWindowState.Maximized;
+            TransparencyKey = BackColor;
+            DoubleBuffered = true;
 
             InitializeSnowfall();
 
             timer = new Timer();
-            timer.Interval = 1;
+            timer.Interval = 16; // Use a more common frame rate (around 60 FPS)
             timer.Tick += Timer_Tick;
             timer.Start();
-
-            DoubleBuffered = true;
-
-            offScreenBuffer = new Bitmap(ClientSize.Width, ClientSize.Height);
         }
 
         private void InitializeSnowfall()
@@ -56,12 +55,8 @@ namespace SnowfallForm
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            var stopwatch = Stopwatch.StartNew();
-
             UpdateSnowflakes();
-            DrawSnowflakes();
-
-            Console.WriteLine("Frame Time: " + stopwatch.ElapsedMilliseconds + " ms");
+            Invalidate(); // Force repaint
         }
 
         private void UpdateSnowflakes()
@@ -72,27 +67,20 @@ namespace SnowfallForm
             }
         }
 
-        private void DrawSnowflakes()
+        protected override void OnPaint(PaintEventArgs e)
         {
+            using (var offScreenBuffer = new Bitmap(ClientSize.Width, ClientSize.Height))
             using (var graphics = Graphics.FromImage(offScreenBuffer))
             {
-                graphics.Clear(Color.Black); // Adjust the background color as needed
+                graphics.Clear(TransparencyKey);
 
                 foreach (var snowflake in snowflakes)
                 {
                     snowflake.Draw(graphics);
                 }
-            }
 
-            using (var formGraphics = CreateGraphics())
-            {
-                formGraphics.DrawImage(offScreenBuffer, 0, 0);
+                e.Graphics.DrawImage(offScreenBuffer, 0, 0);
             }
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            // Override to prevent unnecessary paint operations
         }
     }
 
