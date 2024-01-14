@@ -4,12 +4,22 @@ namespace SnowfallForm
     using System.Collections.Generic;
     using System.Drawing;
     using System.Drawing.Imaging;
+    using System.Runtime.InteropServices;
     using System.Windows.Forms;
 
     public partial class SnowfallForm : Form
     {
         private List<Snowflake> snowflakes;
         private Timer timer;
+
+        // Constants for topmost state
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOSIZE = 0x0001;
+        private const int TOPMOST_FLAGS = SWP_NOMOVE | SWP_NOSIZE;
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         public SnowfallForm()
         {
@@ -20,6 +30,9 @@ namespace SnowfallForm
             WindowState = FormWindowState.Maximized;
             TransparencyKey = BackColor;
             DoubleBuffered = true;
+
+            // Always stay on top
+            TopMost = true;
 
             InitializeSnowfall();
 
@@ -34,12 +47,12 @@ namespace SnowfallForm
             snowflakes = new List<Snowflake>();
 
             SnowflakeInfo[] snowflakeInfoArray = {
-            new SnowflakeInfo("snowflake1"),
-            new SnowflakeInfo("snowflake2"),
-            new SnowflakeInfo("snowflake3"),
-            new SnowflakeInfo("snowflake4"),
-            // Add more images as needed
-        };
+        new SnowflakeInfo("snowflake1"),
+        new SnowflakeInfo("snowflake2"),
+        new SnowflakeInfo("snowflake3"),
+        new SnowflakeInfo("snowflake4"),
+        // Add more images as needed
+    };
 
             for (int i = 0; i < 100; i++)
             {
@@ -79,6 +92,17 @@ namespace SnowfallForm
                 }
 
                 e.Graphics.DrawImage(offScreenBuffer, 0, 0);
+            }
+        }
+
+        // Override CreateParams to make the form topmost
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams createParams = base.CreateParams;
+                createParams.ExStyle |= 0x8; // WS_EX_TOPMOST
+                return createParams;
             }
         }
     }
